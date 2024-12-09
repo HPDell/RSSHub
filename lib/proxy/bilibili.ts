@@ -27,7 +27,9 @@ const handler: Handler = async function (ctx) {
         ctx.header('Content-Disposition', `attachment; filename="${filename}"`);
         ctx.header('Content-Type', response.headers.get('content-type') || 'application/octet-stream');
 
-        return ctx.body(response.body);
+        return new Response(response.body, {
+            headers: ctx.res.headers,
+        });
     } catch (error) {
         return ctx.text(`Error: ${error.message}`, 500);
     }
