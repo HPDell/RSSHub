@@ -21,6 +21,7 @@ import logger from '@/utils/logger';
 import { notFoundHandler, errorHandler } from '@/errors';
 import registry from '@/registry';
 import api from '@/api';
+import proxy from '@/proxy';
 
 process.on('uncaughtException', (e) => {
     logger.error('uncaughtException: ' + e);
@@ -50,6 +51,7 @@ app.use(cache);
 
 app.route('/', registry);
 app.route('/api', api);
+app.route('/proxy', proxy);
 
 app.notFound(notFoundHandler);
 app.onError(errorHandler);
