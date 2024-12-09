@@ -4,8 +4,9 @@ import { ofetch } from 'ofetch';
 import cache from './cache';
 import utils from './utils';
 import logger from '@/utils/logger';
+import { Context } from 'hono';
 
-async function handler(ctx) {
+async function handler(ctx: Context) {
     const uid = ctx.req.param('uid');
     const embed = !ctx.req.param('embed');
     const cookie = await cache.getCookie();
@@ -50,7 +51,7 @@ async function handler(ctx) {
                 });
                 if (bvData.data && bvData.data.cid) {
                     const cid = bvData.data.cid;
-                    const playUrl = await ofetch('https://api.bilibili.com/x/player/playurl', {
+                    const playUrl = await ofetch('https://api.bilibili.com/x/player/wbi/playurl', {
                         query: {
                             bvid: item.bvid,
                             cid,
@@ -58,17 +59,24 @@ async function handler(ctx) {
                             qn: 32,
                             fourk: 0,
                         },
+                        headers: {
+                            Referer: `https://www.bilibili.com/video/${item.bvid}/`,
+                            Cookie: cookie,
+                        },
                     });
                     if (playUrl.data && playUrl.data.dash && playUrl.data.dash.audio && playUrl.data.dash.audio.length) {
                         const audio = playUrl.data.dash.audio[0];
-                        const url = audio.backupUrl && audio.backupUrl.length ? audio.backupUrl[0] : audio.baseUrl;
-                        return {
-                            ...rssItem,
-                            itunes_item_image: item.pic,
-                            itunes_duration: bvData.data.timelength,
-                            enclosure_url: url,
-                            enclosure_type: audio.mimeType,
-                        };
+                        const url = encodeURIComponent(audio.baseUrl);
+                        if (url) {
+                            const hostUrl = new URL(ctx.req.url);
+                            return {
+                                ...rssItem,
+                                itunes_item_image: item.pic,
+                                itunes_duration: bvData.data.timelength,
+                                enclosure_url: `https://${hostUrl.host}/proxy/bilibili?url=${url}`,
+                                enclosure_type: audio.mimeType,
+                            };
+                        }
                     }
                 }
                 return rssItem;
